@@ -1,0 +1,259 @@
+{
+  "info": {
+    "name": "Realtime Chat API",
+    "description": "API endpoints for the Realtime Chat Application containing Auth, 2FA, Chats and Messages log. This collection includes automated tests to manage JWT tokens and environment variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Successful Registration\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.token) {",
+                  "        pm.collectionVariables.set(\"TOKEN\", jsonData.token);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Clay User\",\n  \"email\": \"clay@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/auth/register",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Registers a new user and automatically enables 2FA. Returns the 2FA secret and QR code URL."
+          }
+        },
+        {
+          "name": "1. Login (Step 1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Login Step 1 Successful\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set(\"TEMP_USER_ID\", jsonData.user_id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"clay@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/auth/login",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Authenticates credentials. Returns `requires_2fa: true` and the `user_id` needed for Step 2."
+          }
+        },
+        {
+          "name": "2. Verify 2FA (Step 2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"2FA Verification Successful\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set(\"TOKEN\", jsonData.token);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{TEMP_USER_ID}},\n  \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/auth/verify-2fa",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "auth", "verify-2fa"]
+            },
+            "description": "Finalizes login using the OTP. Automatically sets the `TOKEN` variable for subsequent requests."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chats",
+      "item": [
+        {
+          "name": "Get Chats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/chats",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "chats"]
+            },
+            "description": "Retrieves all chat rooms associated with the authenticated user."
+          }
+        },
+        {
+          "name": "Create Chat",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Chat Created\", function () {",
+                  "    if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "        var jsonData = pm.response.json();",
+                  "        pm.collectionVariables.set(\"CHAT_ID\", jsonData.id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"private\",\n  \"member_ids\": [2]\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/chats",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "chats"]
+            },
+            "description": "Starts a new chat. Sets `CHAT_ID` automatically for testing message related endpoints."
+          }
+        },
+        {
+          "name": "Get Chat Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/chats/{{CHAT_ID}}/messages",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "chats", "{{CHAT_ID}}", "messages"]
+            },
+            "description": "Fetches historical messages for a specific chat ID."
+          }
+        },
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chat_id\": {{CHAT_ID}},\n  \"message\": \"Automated Postman Test Message!\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/messages",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "messages"]
+            },
+            "description": "Sends a message to a chat room."
+          }
+        }
+      ]
+    },
+    {
+      "name": "System & Logs",
+      "item": [
+        {
+          "name": "Get Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/users",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "users"]
+            },
+            "description": "List all users in the system to find IDs for creating chats."
+          }
+        },
+        {
+          "name": "Get API Logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/api-logs",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "api-logs"]
+            },
+            "description": "Admin endpoint to view captured API logs from the middleware."
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "BASE_URL", "value": "http://127.0.0.1:8000" },
+    { "key": "TOKEN", "value": "" },
+    { "key": "CHAT_ID", "value": "1" },
+    { "key": "TEMP_USER_ID", "value": "" }
+  ]
+}

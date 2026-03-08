@@ -1,0 +1,58 @@
+name: CI - Backend & Frontend
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite
+          coverage: none
+
+      - name: Install Dependencies
+        run: composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+        working-directory: backend
+
+      - name: Copy .env
+        run: cp .env.example .env
+        working-directory: backend
+
+      - name: Generate key
+        run: php artisan key:generate
+        working-directory: backend
+
+      - name: Directory Permissions
+        run: chmod -R 777 storage bootstrap/cache
+        working-directory: backend
+
+      - name: Run Tests
+        run: php artisan test
+        working-directory: backend
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install Dependencies
+        run: bun install
+        working-directory: frontend
+
+      - name: Build Frontend
+        run: bun run build
+        working-directory: frontend

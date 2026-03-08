@@ -1,0 +1,27 @@
+# Common
+.env
+.env.*
+!.env.example
+node_modules/
+vendor/
+.DS_Store
+
+# Backend
+backend/.env
+backend/vendor/
+backend/storage/*.key
+backend/public/storage
+backend/public/hot
+backend/public/mix-manifest.json
+backend/.phpunit.result.cache
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/bun.lockb
